@@ -14,7 +14,7 @@ public class Camera {
   final float moveSpeed = 0.002f;
   
   int shaderProjLoc, shaderViewLoc, invProjLoc, invViewLoc;
-  boolean wKey = false, sKey = false, aKey = false, dKey = false, spaceKey = false, shiftKey = false;
+  boolean wKey = false, sKey = false, aKey = false, dKey = false, spaceKey = false, shiftKey = false, isActive = true;
   
   public Camera(float posx, float posy, float posz, float dirx, float diry, float dirz) {
     proj = MMath.perspective(MMath.radians(45.0f), (float)screenSize[0] / (float)screenSize[1], 0.1, 2000.0f);
@@ -27,6 +27,8 @@ public class Camera {
   }
   
   public void mouseCallback() {
+    if(!isActive) return;
+    
     float dx = prevX-mouseX;
     float dy = prevY-mouseY;
     prevX = mouseX;
@@ -48,27 +50,29 @@ public class Camera {
   }
   
   public boolean setKbState(final int _keyCode, final char _key, final boolean state) {
+    if(!isActive) return state;
     switch(_keyCode) {
     case SHIFT:
       return shiftKey = state;
     }
     switch(_key) {
     case 'w':
-      return wKey = state;
+      return wKey = state; // forward
     case 's':
-      return sKey = state;
+      return sKey = state; // backward
     case 'a':
-      return aKey = state;
+      return aKey = state; // left
     case 'd':
-      return dKey = state;
+      return dKey = state; // right
     case ' ':
-      return spaceKey = state;
+      return spaceKey = state; // up
     default:
       return state;
     }
   }
   
   public void updatePos(float dt) {
+    if(!isActive) return;
     if (wKey)
       pos.add(MMath.mul(dir, moveSpeed * dt));
     if (sKey)

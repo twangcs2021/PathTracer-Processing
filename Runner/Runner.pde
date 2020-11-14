@@ -44,6 +44,26 @@ FloatBuffer allocateDirectFloatBuffer(int n) {
 }
 
 void keyPressed() {
+  if(key == 'q') {
+    cam.isActive = !cam.isActive;
+    if(!cam.isActive) {
+      win.setPointerVisible(true);
+      win.confinePointer(false);
+      cam.wKey = false;
+      cam.sKey = false; 
+      cam.aKey = false;
+      cam.dKey = false;
+      cam.spaceKey = false;
+      cam.shiftKey = false;
+    } else {
+      win.setPointerVisible(false);
+      win.confinePointer(true);
+      win.warpPointer((int)screenSize[0]/2, (int)screenSize[1]/2);
+      cam.prevX = screenSize[0]/2;
+      cam.prevY = screenSize[1]/2;
+    }
+  }
+  
   cam.setKbState(keyCode, key, true);
 }
 
