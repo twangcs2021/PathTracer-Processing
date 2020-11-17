@@ -88,9 +88,13 @@ public class Camera {
   }
   
   void updateUniforms() {
-    view = MMath.lookAt(pos, MMath.add(pos, dir), up);
-    invView = MMath.inverse(view);
-    gl.glUniformMatrix4fv(shaderViewLoc, 1, false, view.m, 0);
-    gl.glUniformMatrix4fv(invViewLoc, 1, false, invView.m, 0);
+    mat4 currView = MMath.lookAt(pos, MMath.add(pos, dir), up);
+    if(!view.equals(currView)) { // camera view or position changed
+      screenSize[2] = 0;
+      view.m = currView.m;
+      invView = MMath.inverse(view);
+      gl.glUniformMatrix4fv(shaderViewLoc, 1, false, view.m, 0);
+      gl.glUniformMatrix4fv(invViewLoc, 1, false, invView.m, 0);
+    }
   }
 }

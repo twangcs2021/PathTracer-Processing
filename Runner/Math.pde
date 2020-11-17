@@ -46,6 +46,13 @@ public static class mat4 {
   public float get(int row, int col) {
     return m[row*4+col];
   }
+  
+  public boolean equals(mat4 other) {
+    for(int i = 0; i < 16; ++i) {
+      if(m[i] != other.m[i]) return false;
+    }
+    return true;
+  }
 }
 
 public static class MMath {

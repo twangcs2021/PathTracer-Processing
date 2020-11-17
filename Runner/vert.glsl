@@ -1,4 +1,6 @@
-#version 400 core
+#version 420 core
+
+#extension GL_EXT_shader_image_load_store : require
 
 layout(location = 0) in vec3 pos;
 
