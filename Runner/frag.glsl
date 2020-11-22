@@ -15,11 +15,10 @@ layout(rgba32f) uniform image2D out_img;
 
 struct Material {
   vec3 albedo;
-  vec3 specular;
+  vec3 f0;
   float spec_chance;
   float roughness;
   float emmitence;
-  float ior;
   uint effect;
 };
 
@@ -201,18 +200,61 @@ void get_effect(inout Material mat, in vec3 inter_p) {
   }
 }
 
+float D_GGX(float NoH, float a) {
+    float a2 = a * a;
+    float f = (NoH * a2 - NoH) * NoH + 1.0;
+    return a2 / (PI * f * f);
+}
+
+vec3 F_Schlick(float u, vec3 f0) {
+    return f0 + (vec3(1.0) - f0) * pow(1.0 - u, 5.0);
+}
+
+float V_SmithGGXCorrelated(float NoV, float NoL, float a) {
+    float a2 = a * a;
+    float GGXL = NoV * sqrt((-NoL * a2 + NoL) * NoL + a2);
+    float GGXV = NoL * sqrt((-NoV * a2 + NoV) * NoV + a2);
+    return 0.5 / (GGXV + GGXL);
+}
+
+float Fd_Lambert() {
+    return 1.0;// / PI;
+}
+
+vec3 brdf(in Material mat, in vec3 normal, in vec3 in_dir,  in vec3 out_dir) {
+  vec3 h = normalize(in_dir + out_dir);
+
+  vec3 v = normalize(out_dir);
+  vec3 l = normalize(in_dir);
+  vec3 n = normalize(normal);
+  float NoV = abs(dot(n, v)) + 1e-5;
+  float NoL = clamp(dot(n, l), 0.0, 1.0);
+  float NoH = clamp(dot(n, h), 0.0, 1.0);
+  float LoH = clamp(dot(l, h), 0.0, 1.0);
+
+  float roughness = mat.roughness*mat.roughness;
+  vec3 F = F_Schlick(LoH, mat.albedo); // should be f0
+  float V = V_SmithGGXCorrelated(NoV, NoL, roughness);
+
+  return (V)*F;
+}
+
 // not physically accurate, but still looks good
-vec3 brdf(inout Ray in_ray, Material mat, vec3 normal, inout uint rng_state ){
+vec3 sample_mat(inout Ray in_ray, Material mat, vec3 normal, inout uint rng_state ){
   float spec_prob = mat.spec_chance;
-  if(spec_prob > 0) {
-    spec_prob = fresnel_coe(1.0, mat.ior, in_ray.dir, normal, mat.spec_chance, 1.0);
+  if(rand(rng_state) < spec_prob) {
+    vec3 in_dir = in_ray.dir;
+    vec3 out_dir = reflect(in_ray.dir, normal);
+
+    in_ray.dir = out_dir;
+    return brdf(mat, normal, in_dir, out_dir);
+  } else {
+    vec3 in_dir = in_ray.dir;
+    vec3 out_dir = normalize(normal + rand_vec(rng_state));
+
+    in_ray.dir = out_dir;
+    return mat.albedo*Fd_Lambert();
   }
-  spec_prob = (rand(rng_state) < spec_prob) ? 1.0f : 0.0f;
-  vec3 diff_ray = normalize(normal + rand_vec(rng_state));
-  vec3 spec_ray = reflect(in_ray.dir, normal);
-  spec_ray = normalize(mix(spec_ray, diff_ray, mat.roughness*mat.roughness));
-  in_ray.dir = mix(diff_ray, spec_ray, spec_prob); // glossy outgoing ray
-  return mix(mat.albedo, mat.specular, spec_prob);
 }
 
 vec3 calc_sample(uint max_bounces, inout uint rng_state) {
@@ -233,9 +275,10 @@ vec3 calc_sample(uint max_bounces, inout uint rng_state) {
     vec3 normal = normalize(inter_p - spheres[id].pos);
     ray.origin = inter_p;
     
-    vec3 throughput = brdf(ray, mat, normal, rng_state);
-    accumulator += (mask * mat.emmitence * mat.albedo);
+    vec3 throughput = sample_mat(ray, mat, normal, rng_state);
     mask *= throughput;
+
+    accumulator += (mask * mat.emmitence * mat.albedo);
 
     // russian roulette
     float p = max(mask.r, max(mask.g, mask.b));
@@ -255,66 +298,52 @@ void main() {
     mats[0].albedo = vec3(1);
     mats[0].emmitence = 0;
     mats[0].effect = 0;
-    mats[0].specular = vec3(0);
     mats[0].spec_chance = 0;
     mats[0].roughness = 0;
-    mats[0].ior = 1;
 
     mats[1].albedo = vec3(1);
     mats[1].emmitence = 0;
     mats[1].effect = 0;
-    mats[1].specular = vec3(1);
-    mats[1].spec_chance = 1.0;
-    mats[1].roughness = 0.05;
-    mats[1].ior = 1;
+    mats[1].spec_chance = 0.9;
+    mats[1].roughness = 1.0;
     
-    mats[2].albedo = vec3(1);
-    mats[2].emmitence = 0.25;
+    mats[2].albedo = vec3(212.0/255.0,175.0/255.0,55.0/255.0);
+    mats[2].emmitence = 1.0;
     mats[2].effect = 1;
-    mats[2].specular = vec3(0);
     mats[2].spec_chance = 0;
     mats[2].roughness = 0;
-    mats[2].ior = 1;
 
     mats[3].albedo = vec3(0.7,0,0);
     mats[3].emmitence = 0;
     mats[3].effect = 0;
-    mats[3].specular = vec3(0);
     mats[3].spec_chance = 0;
     mats[3].roughness = 0;
-    mats[3].ior = 1;
 
     mats[4].albedo = vec3(0,0.7,0);
     mats[4].emmitence = 0;
     mats[4].effect = 0;
-    mats[4].specular = vec3(0);
     mats[4].spec_chance = 0;
     mats[4].roughness = 0;
-    mats[4].ior = 1;
 
-    mats[5].albedo = vec3(212.0/255.0,175.0/255.0,55.0/255.0);
+    mats[5].albedo = vec3(1);
     mats[5].emmitence = 0;
     mats[5].effect = 0;
-    mats[5].specular = mats[5].albedo;
-    mats[5].spec_chance = 100;
-    mats[5].roughness = 0.8;
-    mats[5].ior = 1;
+    mats[5].spec_chance = 0;
+    mats[5].roughness = 0;
 
-    mats[6].albedo = vec3(0.7,0.7,0.7);
+    mats[6].albedo = vec3(0.7,0,0);
     mats[6].emmitence = 0;
     mats[6].effect = 1;
-    mats[6].specular = vec3(1);
-    mats[6].spec_chance = 0.5;
-    mats[6].roughness = 0.2;
-    mats[6].ior = 1;
+    mats[6].spec_chance = 0.25;
+    mats[6].roughness = 1.0;
 
-    const float room_height = 40.0f;
-    const float room_width = 40.0f;
+    const float room_height = 15.0f;
+    const float room_width = 15.0f;
     const float wall_r = 1000;
     
     spheres[0].pos = vec3(0, -wall_r, 0); // bottom floor
     spheres[0].r = wall_r;
-    spheres[0].mat = 6;
+    spheres[0].mat = 0;
     
     spheres[1].pos = vec3(0, room_height+wall_r, 0); // top ceiling
     spheres[1].r = wall_r;
@@ -330,23 +359,24 @@ void main() {
     
     spheres[4].pos = vec3(0, 0, room_width/2 + wall_r); // front wall
     spheres[4].r = wall_r;
-    spheres[4].mat = 0;
+    spheres[4].mat = 2;
     
     spheres[5].pos = vec3(0, 0, -room_width/2 - wall_r); // back wall
     spheres[5].r = wall_r;
     spheres[5].mat = 5;
     
-    spheres[6].pos = vec3(0, 1, 0);
+    spheres[6].pos = vec3(-room_width/4, 1, 0);
     spheres[6].r = 1;
-    spheres[6].mat = 2;
+    spheres[6].mat = 5;
     
-    spheres[7].pos = vec3(0, 5, 0);
+    spheres[7].pos = vec3(room_width/4, 2, 0);
     spheres[7].r = 2;
     spheres[7].mat = 1;
   }
   
   vec3 pixel_color = vec3(0);
   uint seed = uint(screen_size.z+1)*init_rand_seed(uint(dot(gl_FragCoord.xz, vec2(gl_FragCoord.y))), uint(dot(gl_FragCoord.zy, vec2(gl_FragCoord.x))));
+  seed = 0;
   for(int s = 0; s < SPF; ++s) {
     pixel_color += calc_sample(MAX_DEPTH, seed);
   }

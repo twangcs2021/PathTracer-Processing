@@ -51,24 +51,29 @@ public class Camera {
   
   public boolean setKbState(final int _keyCode, final char _key, final boolean state) {
     if(!isActive) return state;
-    switch(_keyCode) {
-    case SHIFT:
-      return shiftKey = state;
-    }
     switch(_key) {
     case 'w':
+    case 'W':
       return wKey = state; // forward
     case 's':
+    case 'S':
       return sKey = state; // backward
     case 'a':
+    case 'A':
       return aKey = state; // left
     case 'd':
+    case 'D':
       return dKey = state; // right
     case ' ':
       return spaceKey = state; // up
     default:
-      return state;
-    }
+      switch(_keyCode) {
+      case SHIFT:
+        return shiftKey = state;
+      default:
+        return state;
+      }
+   }
   }
   
   public void updatePos(float dt) {

@@ -75,16 +75,16 @@ void setup() {
   quadBuffer.put(quadVerts);
   quadBuffer.rewind();
   win = (GLWindow)surface.getNative();
-  win.confinePointer(true);
-  win.setPointerVisible(false);
-  win.warpPointer((int)screenSize[0]/2, (int)screenSize[1]/2);
-
-  cam = new Camera(0, 0, -4, 0, 0, 1);
-  cam.prevX = mouseX;
-  cam.prevY = mouseY;
-
-  pgl = (PJOGL)beginPGL();
-  gl = pgl.gl.getGL4();
+    win.confinePointer(true);
+    win.setPointerVisible(false);
+    win.warpPointer((int)screenSize[0]/2, (int)screenSize[1]/2);
+  
+    cam = new Camera(0, 0, -4, 0, 0, 1);
+    cam.prevX = mouseX;
+    cam.prevY = mouseY;
+  
+    pgl = (PJOGL)beginPGL();
+    gl = pgl.gl.getGL4();
   
   vao.create();
   vbo.create();
