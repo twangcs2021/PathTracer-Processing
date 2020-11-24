@@ -138,7 +138,7 @@ float fresnel_coe(float n1, float n2, vec3 normal, vec3 incident, float f0, floa
 }
 
 #define NUM_SPHERES 13
-#define NUM_MATERIALS 8
+#define NUM_MATERIALS 9
 
 Sphere spheres[NUM_SPHERES];
 Material mats[NUM_MATERIALS];
@@ -255,6 +255,7 @@ vec3 calc_sample(uint max_bounces, inout uint rng_state) {
 #define GOLD_SPEC 5
 #define WHITE_SPEC 6
 #define EMITTING_SPEC 7
+#define SILVER_SPEC 8
 
 void load_mats() {
   { // init scene
@@ -302,8 +303,8 @@ void load_mats() {
     mats[5].emmitence = 0;
     mats[5].effect = 0;
     mats[5].specular = mats[5].albedo;
-    mats[5].spec_chance = 100;
-    mats[5].roughness = 0.0;
+    mats[5].spec_chance = 0.7;
+    mats[5].roughness = 0.5;
     mats[5].ior = 1;
 
     mats[6].albedo = vec3(0.7,0.7,0.7);
@@ -321,7 +322,14 @@ void load_mats() {
     mats[7].spec_chance = 0.5;
     mats[7].roughness = 0.2;
     mats[7].ior = 1;
-
+	
+	mats[8].albedo = vec3(192.0/255.0,192.0/255.0,192.0/255.0);
+    mats[8].emmitence = 0;
+    mats[8].effect = 0;
+    mats[8].specular = mats[8].albedo;
+    mats[8].spec_chance = 0.7;
+    mats[8].roughness = 0.5;
+    mats[8].ior = 1;
   }
 }
 
@@ -425,6 +433,50 @@ void load_scene2() {
   sphere_count = 8;
 }
 
+void load_scene3() {
+  const float room_height = 20.0f;
+  const float room_width = 30.0f;
+  const float wall_r = 1000;
+
+  spheres[0].pos = vec3(0, -wall_r, 0); // bottom floor
+  spheres[0].r = wall_r;
+  spheres[0].mat = WHITE_DIFF;
+
+  spheres[1].pos = vec3(0, room_height+wall_r, 0); // top ceiling
+  spheres[1].r = wall_r;
+  spheres[1].mat = WHITE_DIFF;
+
+  spheres[2].pos = vec3(room_width/2 + wall_r, 0, 0); // side wall
+  spheres[2].r = wall_r;
+  spheres[2].mat = PIXEL_LIGHT;
+
+  spheres[3].pos = vec3(-room_width/2 - wall_r, 0, 0); // side wall
+  spheres[3].r = wall_r;
+  spheres[3].mat = GOLD_SPEC;
+
+  spheres[4].pos = vec3(0, 0, room_width/2 + wall_r); // front wall
+  spheres[4].r = wall_r;
+  spheres[4].mat = SILVER_SPEC;
+
+  spheres[5].pos = vec3(0, 0, -room_width/2 - wall_r); // back wall
+  spheres[5].r = wall_r;
+  spheres[5].mat = SILVER_SPEC;
+
+  spheres[6].pos = vec3(0, 2, -8);
+  spheres[6].r = 2;
+  spheres[6].mat = SILVER_SPEC;
+
+  spheres[7].pos = vec3(0, 3, -1);
+  spheres[7].r = 3;
+  spheres[7].mat = GOLD_SPEC;
+  
+  spheres[8].pos = vec3(0, 4, 8);
+  spheres[8].r = 4;
+  spheres[8].mat = MIRROR;
+  
+  sphere_count = 9;
+}
+
 void main() {
   const uint SPF =20; // sample per frame 
   const uint MAX_DEPTH = 10;
@@ -435,8 +487,10 @@ void main() {
   //mats[2].albedo = vec3(1); // for white light
   //load_scene1();
   
-  mats[2].albedo = vec3(0.5, 0.05, 0.05); // for red light
-  load_scene2();
+  //mats[2].albedo = vec3(0.5, 0.05, 0.05); // for red light
+  //load_scene2();
+  
+  load_scene3();
   
   vec3 pixel_color = vec3(0);
   uint seed = uint(screen_size.z+1)*init_rand_seed(uint(dot(gl_FragCoord.xz, vec2(gl_FragCoord.y))), uint(dot(gl_FragCoord.zy, vec2(gl_FragCoord.x))));
