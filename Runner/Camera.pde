@@ -10,8 +10,8 @@ public class Camera {
   
   mat4 view, invView;
   mat4 proj, invProj;
-  final float rotSpeed = 0.025f;
-  final float moveSpeed = 0.002f;
+  final float rotSpeed = 0.05f;
+  final float moveSpeed = 0.010f;
   
   int shaderProjLoc, shaderViewLoc, invProjLoc, invViewLoc;
   boolean wKey = false, sKey = false, aKey = false, dKey = false, spaceKey = false, shiftKey = false, isActive = true;

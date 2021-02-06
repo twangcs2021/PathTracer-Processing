@@ -44,7 +44,7 @@ void keyPressed() {
       win.setPointerVisible(true);
       win.confinePointer(false);
       cam.wKey = false;
-      cam.sKey = false; 
+      cam.sKey = false;
       cam.aKey = false;
       cam.dKey = false;
       cam.spaceKey = false;
@@ -67,6 +67,13 @@ void keyReleased() {
 
 int tex;
 void setup() {
+  ArrayList<Integer> list = new ArrayList<Integer>();
+  list.add(5);
+  list.add(10);
+  for(int a : list) {
+    System.out.println(a);
+  }
+  
   frameRate(120); // cap to 60fps
   
   shader = loadShader("frag.glsl", "vert.glsl");
@@ -75,16 +82,17 @@ void setup() {
   quadBuffer.put(quadVerts);
   quadBuffer.rewind();
   win = (GLWindow)surface.getNative();
-    win.confinePointer(true);
-    win.setPointerVisible(false);
-    win.warpPointer((int)screenSize[0]/2, (int)screenSize[1]/2);
+  win.confinePointer(true);
+  win.setPointerVisible(false);
+  win.warpPointer((int)screenSize[0]/2, (int)screenSize[1]/2);
+  win.setResizable(false);
   
-    cam = new Camera(0, 0, -4, 0, 0, 1);
-    cam.prevX = mouseX;
-    cam.prevY = mouseY;
+  cam = new Camera(0, 0, -4, 0, 0, 1);
+  cam.prevX = mouseX;
+  cam.prevY = mouseY;
   
-    pgl = (PJOGL)beginPGL();
-    gl = pgl.gl.getGL4();
+  pgl = (PJOGL)beginPGL();
+  gl = pgl.gl.getGL4();
   
   vao.create();
   vbo.create();
@@ -103,12 +111,10 @@ void setup() {
   gl.glUniformMatrix4fv(cam.shaderProjLoc, 1, false, cam.proj.m, 0);
   gl.glUniformMatrix4fv(cam.invProjLoc, 1, false, cam.invProj.m, 0);
   
-  
   int texs[]= new int[1];
   gl.glCreateTextures(GL.GL_TEXTURE_2D, 1, texs, 0);
   tex = texs[0];
   gl.glTextureStorage2D(tex, 1, GL.GL_RGBA32F, (int)screenSize[0], (int)screenSize[1]);
-  
   gl.glUniform1i(outImgLoc, 0);
   
   endPGL();
@@ -116,7 +122,6 @@ void setup() {
 
 long prev = 0;
 
-// this one screws up my framebuffers
 void draw() {
   cam.mouseCallback();
   double dt = (-prev + (prev = frameRateLastNanos))/1e6d;
